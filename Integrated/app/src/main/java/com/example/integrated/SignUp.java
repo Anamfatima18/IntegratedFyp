@@ -69,7 +69,7 @@ public class SignUp extends AppCompatActivity {
 
     private void sendSignUpRequest(String email, String name, String username, int age, String password) {
         Log.d(TAG, "sendSignUpRequest: Preparing to send request");
-        String url = "http://172.16.51.246:5000/signup";
+        String url = " http://172.17.40.130:5000/signup";
         RequestQueue queue = Volley.newRequestQueue(this);
 
         JSONObject postData = new JSONObject();

@@ -90,7 +90,7 @@ public class ReadingActivity extends AppCompatActivity {
 
 
         String url = "" +
-                "http://172.16.51.246:5000/get_paragraph";
+                " http://172.17.40.130:5000/get_paragraph";
         JSONObject postData = new JSONObject();
         try {
             postData.put("age", age);

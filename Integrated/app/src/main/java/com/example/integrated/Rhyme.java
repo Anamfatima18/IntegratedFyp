@@ -3,6 +3,8 @@ package com.example.integrated;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -18,22 +20,24 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import com.example.integrated.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Locale;
 
 public class Rhyme extends AppCompatActivity {
-    private TextView levelNumberTextView, taskNumberTextView, wordTextView;
+    private TextView levelNumberTextView, taskNumberTextView, wordTextView, scoreTextView;
     private Button option1Button, option2Button, option3Button, option4Button;
+    private MediaPlayer successSound, failureSound;
+
+    private LottieAnimationView animationView;
 
     private int currentLevel = 1;
     private int currentTask = 1;
@@ -46,24 +50,27 @@ public class Rhyme extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-        // Saving state when the activity is paused
-        SharedPreferences prefs = getSharedPreferences("RhymeActivityPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putInt("currentLevel", currentLevel);
-        editor.putInt("currentTask", currentTask);
-        editor.putInt("currentLevelScore", currentLevelScore);
-        editor.putInt("currentLevelTries", currentLevelTries);
-        editor.putInt("cumulativeScore", cumulativeScore);
-        editor.putInt("totalTries", totalTries);
-        editor.apply();
+        saveGameState();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadGameState();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_rhyme);
         initializeUI();
+
+        // Initialize media players
+        successSound = MediaPlayer.create(this, R.raw.success);
+        failureSound = MediaPlayer.create(this, R.raw.failure);
+
+        // Initialize the animation view from your layout
+        animationView = findViewById(R.id.animation_view);
 
         // Check if the activity is started with the intention to reset
         boolean shouldReset = getIntent().getBooleanExtra("reset", false);
@@ -108,34 +115,47 @@ public class Rhyme extends AppCompatActivity {
     }
 
 
+    private void saveGameState() {
+        SharedPreferences prefs = getSharedPreferences("RhymeActivityPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putInt("currentLevel", currentLevel);
+        editor.putInt("currentTask", currentTask);
+        editor.putInt("currentLevelScore", currentLevelScore);
+        editor.putInt("currentLevelTries", currentLevelTries);
+        editor.putInt("cumulativeScore", cumulativeScore);
+        editor.putInt("totalTries", totalTries);
+        editor.apply();
+    }
+
+    private void loadGameState() {
+        SharedPreferences prefs = getSharedPreferences("RhymeActivityPrefs", MODE_PRIVATE);
+        currentLevel = prefs.getInt("currentLevel", 1);
+        currentTask = prefs.getInt("currentTask", 1);
+        currentLevelScore = prefs.getInt("currentLevelScore", 0);
+        currentLevelTries = prefs.getInt("currentLevelTries", 0);
+        cumulativeScore = prefs.getInt("cumulativeScore", 0);
+        totalTries = prefs.getInt("totalTries", 0);
+    }
+
     private void initializeUI() {
         levelNumberTextView = findViewById(R.id.levelNumberTextView);
         taskNumberTextView = findViewById(R.id.taskNumberTextView);
         wordTextView = findViewById(R.id.wordTextView);
+        scoreTextView = findViewById(R.id.scoreTextView);
         option1Button = findViewById(R.id.option1Button);
         option2Button = findViewById(R.id.option2Button);
         option3Button = findViewById(R.id.option3Button);
         option4Button = findViewById(R.id.option4Button);
-        setupOptionButtons();
-    }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        // Save the current state
-        outState.putInt("currentLevel", currentLevel);
-        outState.putInt("currentTask", currentTask);
-        outState.putInt("currentLevelScore", currentLevelScore);
-        outState.putInt("currentLevelTries", currentLevelTries);
-        outState.putInt("cumulativeScore", cumulativeScore);
-        outState.putInt("totalTries", totalTries);
+        setupOptionButtons();
+        loadSounds();
     }
 
     private void setupOptionButtons() {
         View.OnClickListener optionClickListener = view -> {
             Button clickedButton = (Button) view;
             String selectedOption = clickedButton.getText().toString();
-            validateOption(selectedOption, clickedButton); // Pass the clicked button as well
+            validateOption(selectedOption, clickedButton);
         };
 
         option1Button.setOnClickListener(optionClickListener);
@@ -144,11 +164,10 @@ public class Rhyme extends AppCompatActivity {
         option4Button.setOnClickListener(optionClickListener);
     }
 
-
     private void validateOption(String selectedOption, Button clickedButton) {
         currentLevelTries++;
         totalTries++;
-        String url = "http://192.168.10.8:5000/submit_rhyming_answer";
+        String url = " http://172.17.40.130:5000/submit_rhyming_answer";
 
         try {
             JSONObject postData = new JSONObject();
@@ -163,18 +182,14 @@ public class Rhyme extends AppCompatActivity {
                                 if ("correct".equals(result)) {
                                     currentLevelScore++;
                                     cumulativeScore++;
-                                    // Change to correct answer color
                                     ViewCompat.setBackgroundTintList(clickedButton, ColorStateList.valueOf(ContextCompat.getColor(Rhyme.this, R.color.correct_answer)));
                                 } else {
-                                    // Change to incorrect answer color
                                     ViewCompat.setBackgroundTintList(clickedButton, ColorStateList.valueOf(ContextCompat.getColor(Rhyme.this, R.color.incorrect_answer)));
                                 }
-                                // Wait for 2 seconds before proceeding, to let the user see the result
                                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                                     advanceTaskOrShowScore();
-                                    // Reset the button tint to the default color
                                     ViewCompat.setBackgroundTintList(clickedButton, ColorStateList.valueOf(ContextCompat.getColor(Rhyme.this, R.color.button_default)));
-                                }, 2000);
+                                }, 5000);
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
@@ -190,34 +205,6 @@ public class Rhyme extends AppCompatActivity {
         }
     }
 
-
-    // Method to submit score
-    private void submitScore(int userId, int level, int score) {
-        String url = "http://192.168.10.8:5000/update_score";
-        JSONObject postData = new JSONObject();
-        try {
-            postData.put("user_id", userId);
-            postData.put("level", level);
-            postData.put("score", score);
-
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, postData,
-                    response -> {
-                        // Handle response
-                        Log.d("SubmitScore", "Score submitted successfully");
-                    },
-                    error -> {
-                        // Handle error
-                        Log.e("SubmitScore", "Error submitting score: " + error.getMessage());
-                    });
-
-            RequestQueue queue = Volley.newRequestQueue(this);
-            queue.add(jsonObjectRequest);
-        } catch (JSONException e) {
-            Log.e("SubmitScore", "Error creating JSON object for submitting score", e);
-        }
-    }
-
-
     private void advanceTaskOrShowScore() {
         currentTask++;
         updateScoreDisplay();
@@ -230,76 +217,54 @@ public class Rhyme extends AppCompatActivity {
     }
 
     private void showLevelScoreAndDecideNextStep() {
-
-        SharedPreferences prefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
-        String userIdString = prefs.getString("userId", ""); // Retrieve as String
-        int userId = -1; // Default to -1 or any other sentinel value indicating "not found" or "invalid"
-        try {
-            userId = Integer.parseInt(userIdString); // Convert String to Integer
-        } catch (NumberFormatException e) {
-            // Handle the case where userId is not a valid integer
-            Log.e("Rhyme", "Invalid userId in SharedPreferences", e);
-        }
-
         double scoreRatio = (double) currentLevelScore / currentLevelTries;
-        String scoreMessage;
-
-        // Check if the current level is the last level
         if (currentLevel == 3) {
-            submitScore(userId, currentLevel, currentLevelScore);
+            submitScore();
             if (scoreRatio >= 0.8) {
-                // Player passed the last level
-                submitScore(userId, currentLevel, currentLevelScore);
-                scoreMessage = String.format(Locale.getDefault(), "Your score for level %d: %d correct out of %d tries.\nCongratulations, you've completed all levels!", currentLevel, currentLevelScore, currentLevelTries);
-            } else {
-                // Player did not pass the last level
-                scoreMessage = String.format(Locale.getDefault(), "Your score for level %d: %d correct out of %d tries.\nTry this level again to improve your score.", currentLevel, currentLevelScore, currentLevelTries);
-            }
-            // Show final results or option to retry the last level
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Level " + currentLevel + " Complete!");
-            builder.setMessage(scoreMessage);
-            builder.setPositiveButton("OK", (dialog, which) -> {
-                if (scoreRatio >= 0.8) {
-                    showFinalResults();
-                } else {
-                    restartCurrentLevel();
-                }
-            });
-            builder.create().show();
-        } else {
-            submitScore(userId, currentLevel, currentLevelScore);
-            // For levels 1 and 2
-            if (scoreRatio >= 0.8) {
-                // Player passed the level
-                submitScore(userId, currentLevel, currentLevelScore);
-                scoreMessage = String.format(Locale.getDefault(), "Your score for level %d: %d correct out of %d tries.\nCongratulations, you've advanced to the next level!", currentLevel, currentLevelScore, currentLevelTries);
+                playSoundAndAnimation(true);
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Level " + currentLevel + " Complete!");
-                builder.setMessage(scoreMessage);
-                builder.setPositiveButton("Continue", (dialog, which) -> advanceToNextLevel());
+                builder.setMessage("Level " + currentLevel + " completed.\nYour score: " + currentLevelScore + "/" + currentLevelTries);
+                builder.setPositiveButton("OK", (dialog, which) -> showFinalResults());
                 builder.create().show();
             } else {
-                // Player did not pass the level
-                scoreMessage = String.format(Locale.getDefault(), "Your score for level %d: %d correct out of %d tries.\nTry this level again to improve your score.", currentLevel, currentLevelScore, currentLevelTries);
+                playSoundAndAnimation(false);
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Level " + currentLevel + " Complete!");
-                builder.setMessage(scoreMessage);
+                builder.setMessage("Level " + currentLevel + " completed.\nYour score: " + currentLevelScore + "/" + currentLevelTries);
                 builder.setPositiveButton("Retry", (dialog, which) -> restartCurrentLevel());
                 builder.create().show();
             }
+            currentLevelScore = 0;
+            currentLevelTries = 0;
+        } else {
+            submitScore();
+            if (scoreRatio >= 0.8) {
+                playSoundAndAnimation(true);
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage("Level " + currentLevel + " completed.\nYour score: " + currentLevelScore + "/" + currentLevelTries);
+                builder.setPositiveButton("Continue", (dialog, which) -> {
+                    advanceToNextLevel();
+                });
+                builder.create().show();
+            } else {
+                playSoundAndAnimation(false);
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage("Level " + currentLevel + " completed.\nYour score: " + currentLevelScore + "/" + currentLevelTries);
+                builder.setPositiveButton("Retry", (dialog, which) -> {
+                    restartCurrentLevel();
+                });
+                builder.create().show();
+            }
+            currentLevelScore = 0;
+            currentLevelTries = 0;
         }
-        // Reset current level scores for the next level or retry
-        currentLevelScore = 0;
-        currentLevelTries = 0;
     }
 
 
-    private void advanceToNextLevel() {
 
+
+    private void advanceToNextLevel() {
         currentLevel++;
         currentTask = 1;
-        // Reset the current level score and tries for the new level
         currentLevelScore = 0;
         currentLevelTries = 0;
 
@@ -307,69 +272,63 @@ public class Rhyme extends AppCompatActivity {
             showFinalResults();
         } else {
             updateUIForNewLevel();
-            updateScoreDisplay(); // Make sure this updates the score display to 0/0
         }
     }
 
-
     private void restartCurrentLevel() {
         currentTask = 1;
-        // No need to increment currentLevel or cumulativeScore
         updateUIForNewLevel();
     }
 
     private void updateUIForNewLevel() {
-        // Set the background color based on the current level
-        LinearLayout rootView = findViewById(R.id.rootLayout);
+        LinearLayout rootLayout = findViewById(R.id.rootLayout);
+        Drawable backgroundDrawable;
         switch (currentLevel) {
-            case 1:
-                rootView.setBackgroundColor(getResources().getColor(R.color.level_one_background));
-                break;
             case 2:
-                rootView.setBackgroundColor(getResources().getColor(R.color.level_two_background));
+                backgroundDrawable = ContextCompat.getDrawable(getApplicationContext(), R.drawable.level_two_rhyming);
                 break;
             case 3:
-                rootView.setBackgroundColor(getResources().getColor(R.color.level_three_background));
+                backgroundDrawable = ContextCompat.getDrawable(getApplicationContext(), R.drawable.level_three_rhyming);
                 break;
             default:
-                // Default background color if needed
+                backgroundDrawable = ContextCompat.getDrawable(getApplicationContext(), R.drawable.level_one_rhyming);
                 break;
+        }
+
+        if (backgroundDrawable != null) {
+            rootLayout.setBackground(backgroundDrawable);
         }
 
         levelNumberTextView.setText(String.valueOf(currentLevel));
         taskNumberTextView.setText(String.valueOf(currentTask));
-        fetchRhymingTask(currentLevel); // Fetch the first task of the new or retried level
-        updateScoreDisplay(); // Ensure the score display is updated
+        fetchRhymingTask(currentLevel);
+        updateScoreDisplay();
     }
 
-
     private void updateScoreDisplay() {
-        TextView scoreTextView = findViewById(R.id.scoreTextView);
         String scoreText = "Score: " + currentLevelScore + "/" + currentLevelTries;
         scoreTextView.setText(scoreText);
     }
 
-
     private void showFinalResults() {
-        clearSavedState(); // Clear the saved state before navigating to FinalScore
+        clearSavedState();
         Intent finalScoreIntent = new Intent(Rhyme.this, FinalScore.class);
         finalScoreIntent.putExtra("activityClass", Rhyme.class.getName());
         finalScoreIntent.putExtra("cumulativeScore", cumulativeScore);
         finalScoreIntent.putExtra("totalTries", totalTries);
         startActivity(finalScoreIntent);
-        finish(); // Optionally, close the current activity
+        finish();
     }
 
     private void clearSavedState() {
         SharedPreferences prefs = getSharedPreferences("RhymeActivityPrefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();
-        editor.clear(); // This will clear the saved state
+        editor.clear();
         editor.apply();
     }
 
-
     private void fetchRhymingTask(int level) {
-        String url = "http://172.16.51.246:5000/get_rhyming_task/" + level; // Ensure this URL matches your server
+        String url = " http://172.17.40.130:5000/get_rhyming_task/" + level; // Ensure this URL matches your server
 
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -396,4 +355,76 @@ public class Rhyme extends AppCompatActivity {
         RequestQueue queue = Volley.newRequestQueue(this);
         queue.add(jsonObjectRequest);
     }
+
+    private void loadSounds() {
+        successSound = MediaPlayer.create(this, R.raw.success);
+        failureSound = MediaPlayer.create(this, R.raw.failure);
+    }
+
+    private void playSoundAndAnimation(boolean isSuccess) {
+        MediaPlayer mediaPlayer = isSuccess ? successSound : failureSound;
+
+        if (isSuccess) {
+            mediaPlayer.start();
+            String animationFile = isSuccess ? "success_animation.json" : "failure_animation.json";
+            animationView.setAnimation(animationFile);
+            animationView.setVisibility(View.VISIBLE);
+            animationView.playAnimation();
+
+            new Handler().postDelayed(() -> {
+                animationView.setVisibility(View.GONE);
+            }, 5000);
+        } else {
+            mediaPlayer.start();
+            String animationFile = isSuccess ? "success_animation.json" : "failure_animation.json";
+            animationView.setAnimation(animationFile);
+            animationView.setVisibility(View.VISIBLE);
+            animationView.playAnimation();
+
+            new Handler().postDelayed(() -> {
+                animationView.setVisibility(View.GONE);
+            }, 5000);
+        }
+    }
+
+    private void submitScore() {
+        // Replace the placeholders with your actual user ID and server URL
+        int userId = getUserIdFromSharedPreferences(); // Retrieve the user ID
+        String url = "  http://172.17.40.130:5000/update_score"; // Replace with your server URL
+        JSONObject postData = new JSONObject();
+        try {
+            postData.put("user_id", userId);
+            postData.put("level", currentLevel);
+            postData.put("score", currentLevelScore);
+
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, postData,
+                    response -> {
+                        // Handle response
+                        Log.d("SubmitScore", "Score submitted successfully");
+                    },
+                    error -> {
+                        // Handle error
+                        Log.e("SubmitScore", "Error submitting score: " + error.getMessage());
+                    });
+
+            RequestQueue queue = Volley.newRequestQueue(this);
+            queue.add(jsonObjectRequest);
+        } catch (JSONException e) {
+            Log.e("SubmitScore", "Error creating JSON object for submitting score", e);
+        }
+    }
+
+    private int getUserIdFromSharedPreferences() {
+        SharedPreferences prefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
+        String userIdString = prefs.getString("userId", ""); // Retrieve as String
+        int userId = -1; // Default to -1 or any other sentinel value indicating "not found" or "invalid"
+        try {
+            userId = Integer.parseInt(userIdString); // Convert String to Integer
+        } catch (NumberFormatException e) {
+            // Handle the case where userId is not a valid integer
+            Log.e("Rhyme", "Invalid userId in SharedPreferences", e);
+        }
+        return userId;
+    }
+
 }

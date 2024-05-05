@@ -76,7 +76,7 @@ public class ScoreFragment extends Fragment {
         Log.d("ScoreFragment", "User ID: " + userId); // Log user ID
 
         if (!userId.isEmpty()) {
-            String url = "http://172.16.51.246:5000/get_max_scores?user_id=" + userId;
+            String url = " http://172.17.40.130:5000/get_max_scores?user_id=" + userId;
             Log.d("ScoreFragment", "Fetching scores from: " + url); // Log URL
 
             JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,

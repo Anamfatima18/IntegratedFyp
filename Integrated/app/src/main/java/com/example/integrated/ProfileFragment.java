@@ -42,7 +42,7 @@ public class ProfileFragment extends Fragment {
     private static final int PICK_IMAGE_REQUEST = 1;
 
     private static final String TAG = ProfileFragment.class.getSimpleName();
-    private static final String UPLOAD_URL = "http://172.16.51.246:5000/upload_profile_picture";
+    private static final String UPLOAD_URL = " http://172.17.40.130:5000/upload_profile_picture";
 
     private RequestQueue requestQueue;
 
@@ -103,7 +103,7 @@ public class ProfileFragment extends Fragment {
         SharedPreferences prefs = getActivity().getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
         String userId = prefs.getString("userId", "");
 
-        String url = "http://172.16.51.246:5000/get_user_profile?userId=" + userId;
+        String url = " http://172.17.40.130:5000/get_user_profile?userId=" + userId;
 
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -133,7 +133,7 @@ public class ProfileFragment extends Fragment {
         SharedPreferences prefs = getActivity().getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
         String userId = prefs.getString("userId", "");
 
-        String url = "http://172.16.51.246:5000/fetch_profile_picture/" + userId;
+        String url = " http://172.17.40.130:5000/fetch_profile_picture/" + userId;
         new DownloadImageTask().execute(url);
     }
 
@@ -165,7 +165,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void uploadProfilePicture(Bitmap bitmap) {
-        final String UPLOAD_URL = "http://172.16.51.246:5000/upload_profile_picture";
+        final String UPLOAD_URL = "  http://172.17.40.130:5000/upload_profile_picture";
         SharedPreferences prefs = getActivity().getSharedPreferences("MyAppPrefs", Context.MODE_PRIVATE);
         String userId = prefs.getString("userId", "");
 

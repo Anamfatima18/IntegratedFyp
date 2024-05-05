@@ -69,7 +69,7 @@ public class InitialScreening extends AppCompatActivity {
             return;
         }
 
-        String url = "http://172.16.51.246:5000/get_paragraph_initial";
+        String url = " http://172.17.40.130:5000/get_paragraph_initial";
         JSONObject postData = new JSONObject();
         try {
             postData.put("age", age);

@@ -57,7 +57,7 @@ public class InitialScreeningNegResult extends AppCompatActivity {
 
     private void sendRequestToServer() {
         // URL of your API endpoint for initial screening result
-        String url = "http://172.16.51.246:5000/InitialScreeningResult";
+        String url = " http://172.17.40.130:5000/InitialScreeningResult";
 
         // Example data for the request
         JSONObject requestData = new JSONObject();

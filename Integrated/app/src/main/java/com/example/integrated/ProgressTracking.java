@@ -45,7 +45,7 @@ public class ProgressTracking extends AppCompatActivity {
         String userId = prefs.getString("userId", "");
 
         if (!userId.isEmpty()) {
-            String url = "http://172.16.51.246:5000/get_user_progress/" + userId;
+            String url = " http://172.17.40.130:5000/get_user_progress/" + userId;
 
             JsonArrayRequest request = new JsonArrayRequest(Request.Method.GET, url, null,
                     this::parseResponse,

@@ -75,7 +75,7 @@ public class EditProfile extends AppCompatActivity {
     }
 
     private void fetchUserProfile(String userId) {
-        String url = "http://172.16.51.246:5000/get_user_profile?userId=" + userId;
+        String url = " http://172.17.40.130:5000/get_user_profile?userId=" + userId;
 
         JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -131,7 +131,7 @@ public class EditProfile extends AppCompatActivity {
         }
 
         // Send request to your backend
-        String url = "http://172.16.51.246:5000/update_user_profile";
+        String url = " http://172.17.40.130:5000/update_user_profile";
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, payload,
                 response -> {
                     try {

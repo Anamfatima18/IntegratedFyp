@@ -214,7 +214,7 @@ public class Screening extends AppCompatActivity {
             return;
         }
 
-        String url = "http://172.16.51.246:5000/get_paragraph_initial";
+        String url = " http://172.17.40.130:5000/get_paragraph_initial";
         JSONObject postData = new JSONObject();
         try {
             postData.put("age", age);
@@ -308,7 +308,7 @@ public class Screening extends AppCompatActivity {
 
 
     private void sendDeviceMetrics(int width, int height) {
-        String url = "http://172.16.51.246:5000/sendDeviceMetrics"; // Use 10.0.2.2 for localhost from the Android emulator
+        String url = " http://172.17.40.130:5000/sendDeviceMetrics"; // Use 10.0.2.2 for localhost from the Android emulator
         RequestQueue queue = Volley.newRequestQueue(this);
 
         Map<String, Integer> params = new HashMap<>();
@@ -335,7 +335,7 @@ public class Screening extends AppCompatActivity {
         int age = getUserAgeFromSharedPreferences();
 
         // Construct the URL with age as a query parameter
-        String url = "http://172.16.51.246:5000/predict?age=" + age;
+        String url = " http://172.17.40.130:5000/predict?age=" + age;
 
         StringRequest request = new StringRequest(Request.Method.GET, url,
                 response -> {

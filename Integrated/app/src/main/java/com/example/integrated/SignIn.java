@@ -77,7 +77,7 @@ public class SignIn extends AppCompatActivity {
     }
     private void signIn(String email, String password) {
         Log.d(TAG, "Preparing to sign in with email: " + email);
-        String url = "http://172.16.51.246:5000/signin"; // Replace with your server URL
+        String url = " http://172.17.40.130:5000/signin"; // Replace with your server URL
         RequestQueue queue = Volley.newRequestQueue(this);
 
         JSONObject postData = new JSONObject();

@@ -4,15 +4,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FFFFFF"
     android:padding="16dp"
+    android:background="@android:color/transparent"
     android:weightSum="5">
 
     <!-- Header with Logo and App Name -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1.5"
+        android:layout_weight="1.2"
         android:orientation="vertical"
         android:weightSum="4">
 
@@ -46,7 +46,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="0.8"></TextView>
+            android:layout_weight="0.4"></TextView>
 
         <TextView
             android:layout_width="match_parent"
@@ -118,25 +118,25 @@
         android:orientation="vertical"
         android:weightSum="5">
 
-    <TextView
-        android:id="@+id/questionTextView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="3"
+        <TextView
+            android:id="@+id/questionTextView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="3"
             android:text="Touch the word that matches the word you hear."
-        android:textSize="24sp" />
+            android:textSize="24sp" />
 
-    <Button
-        android:id="@+id/playAudioButton"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_weight="2"
-        android:drawableLeft="@drawable/ic_play_audio"
-        android:text="Hear Word"
-        android:layout_gravity="center_horizontal"
-        android:padding="16dp"
-        />
-        </LinearLayout>
+        <Button
+            android:id="@+id/playAudioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="2"
+            android:drawableLeft="@drawable/ic_play_audio"
+            android:text="Hear Word"
+            android:layout_gravity="center_horizontal"
+            android:padding="16dp"
+            />
+    </LinearLayout>
 
 
     <GridLayout
@@ -215,15 +215,13 @@
 
 
     </GridLayout>
-<!--    <Button-->
-<!--        android:id="@+id/repeatButton"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:text="Repeat"-->
-<!--        android:drawableLeft="@drawable/ic_repeat"-->
-<!--        android:layout_gravity="center_horizontal"-->
-<!--        android:paddingLeft="16dp"-->
-<!--        android:paddingRight="16dp" />-->
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/animation_view"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_marginTop="20dp"
+        android:layout_gravity="center"/>
 
 
 

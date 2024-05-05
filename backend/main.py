@@ -118,6 +118,7 @@ def signin():
         
         # Store the token in the database
         database.store_user_token(email, user_id, token)
+        print(token)
 
         # Return the token and user ID to the client
         return jsonify({'message': 'Sign in successful', 'token': token, 'userId': user_id}), 200

@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class NetworkUtils {
-    private static final String SERVER_URL = "http://172.16.51.246:5000/process_frame";
+    private static final String SERVER_URL = " http://172.17.40.130:5000/process_frame";
     private RequestQueue requestQueue;
     private SharedPreferences sharedPreferences;
 

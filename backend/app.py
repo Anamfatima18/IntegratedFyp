@@ -9,7 +9,7 @@ import random
 import logging
 import hashlib
 import tempfile
-
+from ScreeningRoutes import screening_results
 app = Flask(__name__)
 
 # # Print environment variables
@@ -129,6 +129,7 @@ app = Flask(__name__)
 ######## Rhyming Activity ############
 from main import Initial_bp
 app.register_blueprint(Initial_bp)
+app.register_blueprint(screening_results)
 
 @app.route('/get_rhyming_task/<int:level>', methods=['GET'])
 def get_rhyming_task(level):

@@ -3,6 +3,7 @@ package com.example.integrated;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,15 +16,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
-import com.example.integrated.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -41,11 +43,22 @@ public class WordHarmony extends AppCompatActivity {
     private int currentLevelScore = 0, currentLevelTries = 0, cumulativeScore = 0, totalTries = 0;
     private String correctWord, soundPath;
 
+    private MediaPlayer successSound, failureSound;
+
+    private LottieAnimationView animationView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_word_harmony);
         initializeUIComponents();
+
+        // Initialize media players
+        successSound = MediaPlayer.create(this, R.raw.success);
+        failureSound = MediaPlayer.create(this, R.raw.failure);
+
+        // Initialize the animation view from your layout
+        animationView = findViewById(R.id.animation_view);
 
         // Check if the activity is started with the intention to reset
         boolean shouldReset = getIntent().getBooleanExtra("reset", false);
@@ -129,6 +142,12 @@ public class WordHarmony extends AppCompatActivity {
             wordButtons[i] = findViewById(resID);
         }
         setupWordButtons();
+        loadSounds();
+    }
+
+    private void loadSounds() {
+        successSound = MediaPlayer.create(this, R.raw.success);
+        failureSound = MediaPlayer.create(this, R.raw.failure);
     }
 
     private void setupWordButtons() {
@@ -158,42 +177,20 @@ public class WordHarmony extends AppCompatActivity {
             ViewCompat.setBackgroundTintList(clickedButton, ColorStateList.valueOf(ContextCompat.getColor(WordHarmony.this, R.color.incorrect_answer)));
         }
 
-
-        // Check for level advancement or retry after a brief delay
+        // Check for level completion after a brief delay
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (currentTask == maxTasksPerLevel) {
-
-                // Submit the score regardless of being correct or incorrect
-                SharedPreferences prefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
-                String userId = prefs.getString("userId", "");
-                if (!userId.isEmpty()) {
-                    int parsedUserId = Integer.parseInt(userId); // Ensure userId is correctly parsed as an int
-                    submitScore(parsedUserId, currentLevel, currentLevelScore);
-                }
-
-                if ((currentLevelScore / (double) maxTasksPerLevel) >= 0.8) {
-
-                    if (currentLevel == 3) {
-                        showFinalResults();
-                    } else {
-                        advanceToNextLevel();
-                    }
-                } else {
-                    Toast.makeText(this, "Score less than 80%. Retry this level!", Toast.LENGTH_SHORT).show();
-                    retryLevel();
-                }
+                checkLevelCompletion();
             } else {
-
                 advanceTask();
             }
             // Reset button color for all outcomes after delay
             ViewCompat.setBackgroundTintList(clickedButton, ColorStateList.valueOf(ContextCompat.getColor(WordHarmony.this, R.color.button_default)));
         }, 1000);
-
     }
 
     private void submitScore(int userId, int level, int score) {
-        String url = "http://172.16.51.246:5000/submit_word_harmony_score";
+        String url = " http://172.17.40.130:5000/submit_word_harmony_score";
         JSONObject postData = new JSONObject();
         try {
             postData.put("user_id", userId);
@@ -212,10 +209,8 @@ public class WordHarmony extends AppCompatActivity {
         }
     }
 
-
-
     private void fetchWordHarmonyTask(int level) {
-        String url = "http://172.16.51.246:5000/get_word_harmony_task/" + level;
+        String url = "  http://172.17.40.130:5000/get_word_harmony_task/" + level;
 
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 response -> {
@@ -292,13 +287,43 @@ public class WordHarmony extends AppCompatActivity {
     private void checkLevelCompletion() {
         if ((double) currentLevelScore / maxTasksPerLevel >= 0.8) {
             if (currentLevel < 3) {
-                advanceToNextLevel();
+                showLevelScoreAndDecideNextStep(true);
             } else {
                 showFinalResults();
             }
         } else {
-            retryLevel();
+            showLevelScoreAndDecideNextStep(false);
         }
+    }
+
+
+    private void showLevelScoreAndDecideNextStep(boolean isSuccess) {
+        // Submit the score regardless of being correct or incorrect
+        SharedPreferences prefs = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
+        String userId = prefs.getString("userId", "");
+        if (!userId.isEmpty()) {
+            int parsedUserId = Integer.parseInt(userId); // Ensure userId is correctly parsed as an int
+            submitScore(parsedUserId, currentLevel, currentLevelScore);
+        }
+
+        double scoreRatio = (double) currentLevelScore / maxTasksPerLevel;
+        if (isSuccess) {
+            playSoundAndAnimation(true);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Level " + currentLevel + " completed.\nYour score: " + currentLevelScore + "/" + maxTasksPerLevel);
+            builder.setPositiveButton("Continue", (dialog, which) -> advanceToNextLevel());
+            builder.create().show();
+        } else {
+            playSoundAndAnimation(false);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Level " + currentLevel + " completed.\nYour score: " + currentLevelScore + "/" + maxTasksPerLevel);
+            builder.setPositiveButton("Retry", (dialog, which) -> retryLevel());
+            builder.create().show();
+        }
+
+        // Reset level-specific variables
+        currentLevelScore = 0;
+        currentLevelTries = 0;
     }
 
     private void advanceToNextLevel() {
@@ -322,21 +347,23 @@ public class WordHarmony extends AppCompatActivity {
     }
 
     private void updateUIForNewLevel() {
+        LinearLayout rootLayout = findViewById(R.id.rootLayout); // Assuming this is your root layout
+        Drawable backgroundDrawable;
 
-        LinearLayout rootView = findViewById(R.id.rootLayout);
         switch (currentLevel) {
-            case 1:
-                rootView.setBackgroundColor(getResources().getColor(R.color.level_one_background));
-                break;
             case 2:
-                rootView.setBackgroundColor(getResources().getColor(R.color.level_two_background));
+                backgroundDrawable = ContextCompat.getDrawable(getApplicationContext(), R.drawable.level_two_word_harmony);
                 break;
             case 3:
-                rootView.setBackgroundColor(getResources().getColor(R.color.level_three_background));
+                backgroundDrawable = ContextCompat.getDrawable(getApplicationContext(), R.drawable.level_three_word_harmony);
                 break;
             default:
-                // Default background color if needed
+                backgroundDrawable = ContextCompat.getDrawable(getApplicationContext(), R.drawable.level_one_word_harmony);
                 break;
+        }
+
+        if (backgroundDrawable != null) {
+            rootLayout.setBackground(backgroundDrawable);
         }
 
         levelNumberTextView.setText(String.valueOf(currentLevel));
@@ -374,4 +401,31 @@ public class WordHarmony extends AppCompatActivity {
             mediaPlayer = null;
         }
     }
+
+    private void playSoundAndAnimation(boolean isSuccess) {
+        MediaPlayer mediaPlayer = isSuccess ? successSound : failureSound;
+
+        if (isSuccess) {
+            mediaPlayer.start();
+            String animationFile = isSuccess ? "success_animation.json" : "failure_animation.json";
+            animationView.setAnimation(animationFile);
+            animationView.setVisibility(View.VISIBLE);
+            animationView.playAnimation();
+
+            new Handler().postDelayed(() -> {
+                animationView.setVisibility(View.GONE);
+            }, 5000);
+        } else {
+            mediaPlayer.start();
+            String animationFile = isSuccess ? "success_animation.json" : "failure_animation.json";
+            animationView.setAnimation(animationFile);
+            animationView.setVisibility(View.VISIBLE);
+            animationView.playAnimation();
+
+            new Handler().postDelayed(() -> {
+                animationView.setVisibility(View.GONE);
+            }, 5000);
+        }
+    }
+
 }

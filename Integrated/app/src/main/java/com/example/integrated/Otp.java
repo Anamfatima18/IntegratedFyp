@@ -87,7 +87,7 @@ public class Otp extends AppCompatActivity {
 
     private void verifyOtp(String email, String otp) {
         Log.d(TAG, "verifyOtp: Verifying OTP");
-        String url = "http://172.16.51.246:5000/verify";  // Replace with your server URL
+        String url = " http://172.17.40.130:5000/verify";  // Replace with your server URL
         RequestQueue queue = Volley.newRequestQueue(this);
 
         JSONObject postData = new JSONObject();

@@ -1,7 +1,6 @@
 package com.example.integrated;
 
 import android.Manifest;
-import android.animation.Animator;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -12,8 +11,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -250,7 +247,7 @@ public class AudioRhyme extends AppCompatActivity {
     }
 
     private void fetchWordAndOptions() {
-        String url = "http://172.16.51.246:5000/audio_rhyme/get_word?level=" + currentLevel;
+        String url = " http://172.17.40.130:5000/audio_rhyme/get_word?level=" + currentLevel;
         Log.d(TAG, "Fetching word and options for Level: " + currentLevel + ", Task: " + currentTask);
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -295,7 +292,7 @@ public class AudioRhyme extends AppCompatActivity {
     }
 
     private void submitAudio() {
-        String url = "http://172.16.51.246:5000/audio_rhyme/submit?level=" + currentLevel + "&task=" + currentTask;
+        String url = " http://172.17.40.130:5000/audio_rhyme/submit?level=" + currentLevel + "&task=" + currentTask;
         Log.d(TAG, "Submitting audio for Level: " + currentLevel + ", Task: " + currentTask);
 
         Log.d(TAG, "File name: " + fileName);
@@ -402,7 +399,7 @@ public class AudioRhyme extends AppCompatActivity {
 
 
     private void submitScore(int userId, int level, int score) {
-        String url = "http://172.16.51.246:5000/submit_audio_rhyme_score"; // Adjust the URL as needed
+        String url = " http://172.17.40.130:5000/submit_audio_rhyme_score"; // Adjust the URL as needed
         JSONObject postData = new JSONObject();
         try {
             postData.put("user_id", userId);
@@ -431,6 +428,11 @@ public class AudioRhyme extends AppCompatActivity {
 
 
     private void showLevelScoreAndDecideNextStep() {
+
+        if (isFinishing()) {
+            return;
+        }
+
         AlertDialog.Builder builder =new AlertDialog.Builder(this);
         double scoreRatio = (double) currentLevelScore / currentLevelTries;
 
@@ -500,9 +502,6 @@ public class AudioRhyme extends AppCompatActivity {
         Drawable backgroundDrawable;
 
         switch (currentLevel) {
-            case 1:
-                backgroundDrawable = ContextCompat.getDrawable(getApplicationContext(), R.drawable.level_one);
-                break;
             case 2:
                 backgroundDrawable = ContextCompat.getDrawable(getApplicationContext(), R.drawable.level_two);
                 break;
